@@ -1,5 +1,6 @@
 # Llama-Hybrid-RAG-Assistant  
 ### *An AI Retrieval-Augmented Generation Assistant built with Llama 3, FAISS, BM25, and persistent memory.*
+
 ---
 ## 🚀 Overview
 The **Llama Hybrid RAG Assistant** is a **Retrieval-Augmented Generation (RAG)** system powered by **Groq’s Llama 3**, **FAISS dense embeddings**, and **BM25 sparse retrieval**.  
