@@ -10,31 +10,27 @@ st.title("🧠 SmartGPT")
 
 with st.sidebar:
     st.markdown("### Settings")
-    provider = st.selectbox("Provider", ["Groq", "OpenAI"], index=0)
-    alpha = st.slider("Hybrid α (dense weight)", 0.0, 1.0, 1.0, 0.05)
+    provider = st.selectbox("Provider", ["Gemini", "Groq", "OpenAI"], index=0)
+    alpha = st.slider("Hybrid α (dense weight)", 0.0, 1.0, 0.6, 0.05)
     top_k = st.slider("Top-K", 1, 10, 5, 1)
 
-    groq_model = st.selectbox(
-    "Groq model",
-    [
-        "llama-3.3-70b-versatile",
-        "llama-3.3-8b-instant",
-        "mixtral-8x7b-32768",
-        "gemma2-9b-it",
-    ],
-    index=0
-    )
+    if provider == "Gemini":
+        gemini_model = st.selectbox("Gemini model", ["gemini-2.5-flash", "gemini-2.5-pro"], index=0)
+    elif provider == "Groq":
+        groq_model = st.selectbox(
+            "Groq model",
+            ["llama-3.1-70b-versatile", "llama-3.1-8b-instant"],
+            index=0,
+        )
 
     st.caption(f"Backend: [{API_BASE}]({API_BASE})")
 
-# chat history
 if "chat" not in st.session_state:
     st.session_state.chat = []
 
-# render history
-for role, text in st.session_state.chat:
+for role, message in st.session_state.chat:
     with st.chat_message(role):
-        st.markdown(text)
+        st.markdown(message)
 
 q = st.chat_input("Ask anything about the knowledge base…")
 if q:
@@ -43,32 +39,30 @@ if q:
         st.markdown(q)
 
     with st.chat_message("assistant"):
-        ph = st.empty()
-        ph.markdown("Thinking…")
+        placeholder = st.empty()
+        placeholder.markdown("Thinking…")
+        if provider == "Gemini":
+            endpoint = "/ask_gemini"
+            model = gemini_model
+        elif provider == "Groq":
+            endpoint = "/ask_groq"
+            model = groq_model
+        else:
+            endpoint = "/ask"
+            model = None
 
-        # choose backend
-        endpoint = "/ask_groq" if provider == "Groq" else "/ask"
-
-        payload = {
-            "query": q,
-            "top_k": int(top_k),
-            "alpha": float(alpha),
-        }
-        if provider == "Groq":
-            payload["model"] = groq_model  # backend will use this
+        payload = {"query": q, "top_k": int(top_k), "alpha": float(alpha)}
+        if model:
+            payload["model"] = model
 
         try:
-            r = requests.post(f"{API_BASE}{endpoint}", json=payload, timeout=300)
-            r.raise_for_status()
-            data = r.json()
-
+            response = requests.post(f"{API_BASE}{endpoint}", json=payload, timeout=300)
+            response.raise_for_status()
+            data = response.json()
             answer = (data.get("answer") or "(no answer)").strip()
-
-            # No citations rendered
-            md = answer
-
-            ph.markdown(md)
-            st.session_state.chat.append(("assistant", md))
-
-        except Exception as e:
-            ph.markdown(f"❌ **Error:** {e}")
+            placeholder.markdown(answer)
+            st.session_state.chat.append(("assistant", answer))
+        except Exception as exc:
+            error_message = f"❌ **Error:** {exc}"
+            placeholder.markdown(error_message)
+            st.session_state.chat.append(("assistant", error_message))
