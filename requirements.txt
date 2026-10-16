@@ -12,6 +12,7 @@ nltk>=3.9.1
 pyarrow>=16.1.0
 duckdb>=1.1.2
 google-genai>=1.0.0
+langchain-groq>=0.2.0
 llama-index-core>=0.11.20
 llama-index-embeddings-huggingface>=0.3.1
 llama-index-llms-openai>=0.3.5
